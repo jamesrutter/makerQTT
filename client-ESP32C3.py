@@ -1,9 +1,8 @@
 import machine
 import network
 import utime
-
 from umqtt.simple import MQTTClient
-import ssl
+from morse import blink_morse_code
 
 # WiFi credentials
 WIFI_SSID = ''
@@ -72,9 +71,7 @@ while True:
     # publish as MQTT payload
     publish('esp32c3/hello', message)
     
-    led.value(1)
-    utime.sleep(0.5)
-    led.value(0)
+    blink_morse_code(led, 'Hello') 
     
     #delay 5 seconds
     utime.sleep(5)
