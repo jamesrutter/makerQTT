@@ -6,8 +6,8 @@ from umqtt.simple import MQTTClient
 import ssl
 
 # WiFi credentials
-WIFI_SSID = 'Buckminster'
-WIFI_PASSWORD = 'gooddog4'
+WIFI_SSID = ''
+WIFI_PASSWORD = ''
 
 # HiveMQ details
 # IMPORTANT! YOU NEED TO PUT YOUR SPECIFIC INFORMATION HERE OR DEVICE WILL NOT CONNECT
