@@ -1,6 +1,4 @@
 import machine
-from machine import Pin
-
 import network
 import utime
 
@@ -8,17 +6,23 @@ from umqtt.simple import MQTTClient
 import ssl
 
 # WiFi credentials
-WIFI_SSID = ''
-WIFI_PASSWORD = ''
+WIFI_SSID = 'Buckminster'
+WIFI_PASSWORD = 'gooddog4'
 
 # HiveMQ details
-MQTT_BROKER = ''
-MQTT_PORT = 0 
-MQTT_USER = ''
-MQTT_PASSWORD = ''
+# IMPORTANT! YOU NEED TO PUT YOUR SPECIFIC INFORMATION HERE OR DEVICE WILL NOT CONNECT
+MQTT_BROKER = '' # Insert your HiveMQ Cluster URL 
+MQTT_PORT = 0 # Set to 0 even though default port is 8883 
+MQTT_USER = '' # Insert HiveMQ username 
+MQTT_PASSWORD = '' # Insert HiveMQ password
 
 # Device ID for MQTT Client
-CLIENT_ID = machine.unique_id()
+# CLIENT_ID = machine.unique_id() use auto-generated UUID format for identifying clients 
+CLIENT_ID = b"jdr_esp32c3" # custom named client, use your own format or way to identify your devices  
+
+# LED Setup
+led = machine.Pin(21, machine.Pin.OUT) # ensure you use the correct pin value depending on your circuit. 
+led.value(0) # ensure that the LED is off by default 
 
 # Connect to WiFi function 
 def connect_to_wifi(ssid, password):
@@ -36,14 +40,14 @@ connect_to_wifi(WIFI_SSID, WIFI_PASSWORD)
 
 # Function to setup and return an MQTT client
 def connectMQTT():
-    client = MQTTClient(client_id=b"jdr_esp32c3",
+    client = MQTTClient(client_id=CLIENT_ID,
         server=MQTT_BROKER,
         port=MQTT_PORT,
         user=MQTT_USER,
         password=MQTT_PASSWORD,
         keepalive=7200,
         ssl=True,
-        ssl_params={'server_hostname':'80cd98a8ff724b559bad56104395d810.s1.eu.hivemq.cloud'}
+        ssl_params={'server_hostname': MQTT_BROKER}
         )
     client.connect()
     print("Connecting to MQTT Broker...")
@@ -67,6 +71,10 @@ while True:
     
     # publish as MQTT payload
     publish('esp32c3/hello', message)
+    
+    led.value(1)
+    utime.sleep(0.5)
+    led.value(0)
     
     #delay 5 seconds
     utime.sleep(5)
