@@ -8,17 +8,17 @@ from umqtt.simple import MQTTClient
 # -------- CONFIGURATION --------- #
 
 # WiFi credentials
-WIFI_SSID = 'Buckminster'
-WIFI_PASSWORD = 'gooddog4'
+WIFI_SSID = ''
+WIFI_PASSWORD = ''
 
 # HiveMQ details
 MQTT_BROKER = '80cd98a8ff724b559bad56104395d810.s1.eu.hivemq.cloud'
 MQTT_PORT = 0 
-MQTT_USER = 'haystack'
-MQTT_PASSWORD = 'Maker2024'	
+MQTT_USER = ''
+MQTT_PASSWORD = ''	
 
 # Device ID for MQTT Client
-CLIENT_ID = b"haystack_esp32c3_jdr" # custom named client
+CLIENT_ID = b"esp32c3_haystack_jdr" # custom named client
 
 # Generic Maker Exchange Message Format 
 TOPIC = "maker-exchange/haystack"
