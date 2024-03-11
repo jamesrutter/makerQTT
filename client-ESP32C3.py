@@ -1,27 +1,53 @@
-import machine
+from machine import Pin
 import network
 import utime
+import json
 from umqtt.simple import MQTTClient
-from morse import blink_morse_code
+
+
+# -------- CONFIGURATION --------- #
 
 # WiFi credentials
-WIFI_SSID = ''
-WIFI_PASSWORD = ''
+WIFI_SSID = 'Buckminster'
+WIFI_PASSWORD = 'gooddog4'
 
 # HiveMQ details
-# IMPORTANT! YOU NEED TO PUT YOUR SPECIFIC INFORMATION HERE OR DEVICE WILL NOT CONNECT
-MQTT_BROKER = '' # Insert your HiveMQ Cluster URL 
-MQTT_PORT = 0 # Set to 0 even though default port is 8883 
-MQTT_USER = '' # Insert HiveMQ username 
-MQTT_PASSWORD = '' # Insert HiveMQ password
+MQTT_BROKER = '80cd98a8ff724b559bad56104395d810.s1.eu.hivemq.cloud'
+MQTT_PORT = 0 
+MQTT_USER = 'haystack'
+MQTT_PASSWORD = 'Maker2024'	
 
 # Device ID for MQTT Client
-# CLIENT_ID = machine.unique_id() use auto-generated UUID format for identifying clients 
-CLIENT_ID = b"jdr_esp32c3" # custom named client, use your own format or way to identify your devices  
+CLIENT_ID = b"haystack_esp32c3_jdr" # custom named client
+
+# Generic Maker Exchange Message Format 
+TOPIC = "maker-exchange/haystack"
+PAYLOAD = json.dumps({
+  "sender": "Haystack Fab Lab",
+  "location": "Deer Isle, ME",
+  "messageType": "broadcast",
+  "content": "Hello, Maker!",
+  "timestamp": "2024-03-10T15:00:00Z"
+})
 
 # LED Setup
-led = machine.Pin(21, machine.Pin.OUT) # ensure you use the correct pin value depending on your circuit. 
-led.value(0) # ensure that the LED is off by default 
+led = Pin(21, Pin.OUT)
+led.value(0) # ensure that the LED is off by default
+
+# Button Setup # 
+button = Pin(5, Pin.IN, Pin.PULL_UP)
+
+DEBOUNCE_TIME = 500  # milliseconds
+LAST_PRESS_TIME = 0
+
+# Function to handle button press 
+def button_pressed():
+    global LAST_PRESS_TIME
+    current_time = utime.ticks_ms()
+    if button.value() == 0 and utime.ticks_diff(current_time, LAST_PRESS_TIME) > DEBOUNCE_TIME:
+        LAST_PRESS_TIME = current_time
+        return True
+    return False
 
 # Connect to WiFi function 
 def connect_to_wifi(ssid, password):
@@ -34,8 +60,16 @@ def connect_to_wifi(ssid, password):
     print("Connected to WiFi!")
     print(wlan.ifconfig())
 
-# Establish WiFi connection
-connect_to_wifi(WIFI_SSID, WIFI_PASSWORD)
+# MQTT Callback Function for when message is received
+def on_message(topic, msg):
+    print("\nReceived MQTT Message!")
+    print(f"Topic: {topic.decode()}")
+    print(f"Message: {msg.decode()}\n")
+    
+    # Blink the LED briefly to signal that a message was received
+    led.on()
+    utime.sleep(0.5)
+    led.off()
 
 # Function to setup and return an MQTT client
 def connectMQTT():
@@ -48,31 +82,37 @@ def connectMQTT():
         ssl=True,
         ssl_params={'server_hostname': MQTT_BROKER}
         )
+    client.set_callback(on_message)  # Set the callback function for incoming messages
     client.connect()
     print("Connecting to MQTT Broker...")
+    client.subscribe("maker-exchange/#")  # Subscribe to all topics related to esp32c3
+    print("Subscribing to topics...")
     return client
 
-# Setup MQTT and connect
-client = connectMQTT()
-client.connect()
-
 # Function to publish messages to the MQTT broker 
-def publish(topic, value):
-    print(topic)
-    print(value)
-    client.publish(topic, value)
-    print("publish Done")
+def publish(topic, payload):
+    print("Publishing message...\n\n")
+    print(f"Topic: {topic} /n Payload: {payload}")
+    client.publish(topic, payload)
+    print("\n\nPublishing complete!")
+    
+    
+# ---------- SETUP --------------- #
 
-# Super loop to run program indefinitely
+# Step 1. Establish WiFi connection
+connect_to_wifi(WIFI_SSID, WIFI_PASSWORD)
+
+# Step 2. Setup MQTT and connect
+client = connectMQTT()
+
+# ---------- MAIN LOOP ----------- #
 while True:
-    print("Getting ready to publish message...")
-    message = "Hello, Maker!"
-    
-    # publish as MQTT payload
-    publish('esp32c3/hello', message)
-    
-    blink_morse_code(led, 'Hello') 
-    
-    #delay 5 seconds
-    utime.sleep(5)
-
+    if button_pressed():
+        led.on()
+        publish(TOPIC, PAYLOAD)
+        utime.sleep(0.5)
+        led.off()
+    else:
+        print("Waiting for message...")
+        client.check_msg()  # Check for new messages (non-blocking)
+        utime.sleep(0.1)
